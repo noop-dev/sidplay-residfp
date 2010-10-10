@@ -8,7 +8,9 @@ if HAVE_VISIBILITY
 endif
 
 AM_CPPFLAGS = -I $(top_builddir)/builders/residfp-builder \
--I $(top_builddir)/builders/residfp-builder/residfp
+-I $(top_builddir)/builders/residfp-builder/residfp \
+-I $(top_builddir)/builders/resid-builder \
+-I $(top_builddir)/builders/resid-builder/resid
 
 #=========================================================
 EXTRA_DIST = \
@@ -41,21 +43,31 @@ builders/residfp-builder/residfp/COPYING \
 builders/residfp-builder/residfp/INSTALL \
 builders/residfp-builder/residfp/README \
 builders/residfp-builder/residfp/README.VICE \
-builders/residfp-builder/residfp/NEWS
+builders/residfp-builder/residfp/NEWS \
+builders/resid-builder/resid/AUTHORS \
+builders/resid-builder/resid/ChangeLog \
+builders/resid-builder/resid/COPYING \
+builders/resid-builder/resid/configure.in \
+builders/resid-builder/resid/INSTALL \
+builders/resid-builder/resid/README \
+builders/resid-builder/resid/README.VICE \
+$(noinst_DATA)
 
 #=========================================================
 # Libraries
 lib_LTLIBRARIES = \
 sidplay/libsidplay2.la \
 utils/libsidutils.la \
-builders/residfp-builder/libresidfp-builder.la
+builders/residfp-builder/libresidfp-builder.la \
+builders/resid-builder/libresid-builder.la
 
 if HARDSID
   lib_LTLIBRARIES += builders/hardsid-builder/libhardsid-builder.la
 endif
 
 noinst_LIBRARIES = \
-builders/residfp-builder/residfp/libresidfp.a
+builders/residfp-builder/residfp/libresidfp.a \
+builders/resid-builder/resid/libresid.a
 
 #=========================================================
 # libsidplay
@@ -148,7 +160,7 @@ utils_libsidutils_la_LIBADD = sidplay/libsidplay2.la
 utils_libsidutils_la_LDFLAGS = -version-info $(LIBSIDUTILSVERSION)
 
 #=========================================================
-# resid
+# resid-fp
 
 if USE_SSE
   convolve_sse_src = builders/residfp-builder/residfp/convolve-sse.cc
@@ -175,7 +187,41 @@ builders/residfp-builder/residfp/version.cc \
 builders/residfp-builder/residfp/convolve.cc \
 $(convolve_sse_src)
 
-builders_residfp_builder_residfp_libresidfp_a_CXXFLAGS = @RESID_FLAGS@
+builders_residfp_builder_residfp_libresidfp_a_CXXFLAGS = @RESIDFP_FLAGS@
+
+#=========================================================
+# resid
+
+BUILT_SOURCES = $(noinst_DATA:.dat=.cc)
+
+builders_resid_builder_resid_libresid_a_SOURCES = \
+builders/resid-builder/resid/sid.h \
+builders/resid-builder/resid/voice.h \
+builders/resid-builder/resid/wave.h \
+builders/resid-builder/resid/envelope.h \
+builders/resid-builder/resid/filter.h \
+builders/resid-builder/resid/extfilt.h \
+builders/resid-builder/resid/pot.h \
+builders/resid-builder/resid/spline.h \
+builders/resid-builder/resid/sid.cc \
+builders/resid-builder/resid/voice.cc \
+builders/resid-builder/resid/wave.cc \
+builders/resid-builder/resid/envelope.cc \
+builders/resid-builder/resid/filter.cc \
+builders/resid-builder/resid/extfilt.cc \
+builders/resid-builder/resid/pot.cc \
+builders/resid-builder/resid/version.cc \
+$(noinst_DATA:.dat=.cc)
+
+noinst_DATA = \
+builders/resid-builder/resid/wave6581_PST.dat \
+builders/resid-builder/resid/wave6581_PS_.dat \
+builders/resid-builder/resid/wave6581_P_T.dat \
+builders/resid-builder/resid/wave6581__ST.dat \
+builders/resid-builder/resid/wave8580_PST.dat \
+builders/resid-builder/resid/wave8580_PS_.dat \
+builders/resid-builder/resid/wave8580_P_T.dat \
+builders/resid-builder/resid/wave8580__ST.dat
 
 #=========================================================
 # builders
@@ -192,6 +238,21 @@ builders_residfp_builder_libresidfp_builder_la_LIBADD = \
 builders/residfp-builder/residfp/libresidfp.a
 
 builders_residfp_builder_libresidfp_builder_la_LDFLAGS = -version-info $(LIBRESIDVERSION)
+
+
+builders_resid_builder_libresid_builder_ladir = $(includedir)/sidplay/builders
+builders_resid_builder_libresid_builder_la_HEADERS = \
+builders/resid-builder/resid.h
+
+builders_resid_builder_libresid_builder_la_SOURCES = \
+builders/resid-builder/resid.cpp \
+builders/resid-builder/resid-builder.cpp \
+builders/resid-builder/resid-emu.h
+
+builders_resid_builder_libresid_builder_la_LIBADD = \
+builders/resid-builder/resid/libresid.a
+
+builders_resid_builder_libresid_builder_la_LDFLAGS = -version-info $(LIBRESIDVERSION)
 
 
 builders_hardsid_builder_libhardsid_builder_ladir = $(includedir)/sidplay/builders

@@ -1,5 +1,5 @@
 /***************************************************************************
-         resid-builder.cpp - ReSIDfp builder class for creating/controlling
+         resid-builder.cpp - ReSID builder class for creating/controlling
                              resids.
                              -------------------
     begin                : Wed Sep 5 2001
@@ -47,83 +47,83 @@
 #   include <new>
 #endif
 
-#include "residfp.h"
-#include "residfp-emu.h"
+#include "resid.h"
+#include "resid-emu.h"
 
 // Error String(s)
-const char *ReSIDfpBuilder::ERR_FILTER_DEFINITION = "RESID ERROR: Filter definition is not valid (see docs).";
+const char *ReSIDBuilder::ERR_FILTER_DEFINITION = "RESID ERROR: Filter definition is not valid (see docs).";
 
-ReSIDfpBuilder::ReSIDfpBuilder (const char * const name)
+ReSIDBuilder::ReSIDBuilder (const char * const name)
 :sidbuilder (name)
 {
     m_error = "N/A";
 }
 
-ReSIDfpBuilder::~ReSIDfpBuilder (void)
+ReSIDBuilder::~ReSIDBuilder (void)
 {   // Remove all are SID emulations
     remove ();
 }
 
 // Create a new sid emulation.  Called by libsidplay2 only
-uint ReSIDfpBuilder::create (uint sids)
+uint ReSIDBuilder::create (uint sids)
 {
 	uint   count;
-    ReSIDfp *sid = NULL;
+    ReSID *sid = NULL;
     m_status   = true;
 
     // Check available devices
 	count = devices (false);
 	if (!m_status)
-		goto ReSIDfpBuilder_create_error;
+		goto ReSIDBuilder_create_error;
     if (count && (count < sids))
 		sids = count;
 
 	for (count = 0; count < sids; count++)
 	{
 #   ifdef HAVE_EXCEPTIONS
-	    sid = new(std::nothrow) ReSIDfp(this);
+	    sid = new(std::nothrow) ReSID(this);
 #   else
-	    sid = new ReSIDfp(this);
+	    sid = new ReSID(this);
 #   endif
 
         // Memory alloc failed?
         if (!sid)
 		{
-			sprintf (m_errorBuffer, "%s ERROR: Unable to create ReSIDfp object", name ());
+			sprintf (m_errorBuffer, "%s ERROR: Unable to create ReSID object", name ());
             m_error = m_errorBuffer;
-			goto ReSIDfpBuilder_create_error;
+			goto ReSIDBuilder_create_error;
 		}
 
 		// SID init failed?
 		if (!*sid)
 		{
 			m_error = sid->error ();
-			goto ReSIDfpBuilder_create_error;
+			goto ReSIDBuilder_create_error;
 		}
 	    sidobjs.push_back (sid);
 	}
     return count;
 
-ReSIDfpBuilder_create_error:
+ReSIDBuilder_create_error:
     m_status = false;
     if (sid)
         delete sid;
     return count;
 }
 
-const char *ReSIDfpBuilder::credits ()
+const char *ReSIDBuilder::credits ()
 {
     m_status = true;
 
     // Available devices
     if (sidobjs.size ())
     {
-        ReSIDfp *sid = (ReSIDfp *) sidobjs[0];
+        ReSID *sid = (ReSID *) sidobjs[0];
         return sid->credits ();
     }
 
     {   // Create an emulation to obtain credits
-        ReSIDfp sid(this);
+        ReSID sid(this);
         if (!sid)
 		{
             m_status = false;
@@ -135,7 +135,7 @@ const char *ReSIDfpBuilder::credits ()
 }
 
 
-uint ReSIDfpBuilder::devices (bool created)
+uint ReSIDBuilder::devices (bool created)
 {
     m_status = true;
     if (created)
@@ -144,43 +144,43 @@ uint ReSIDfpBuilder::devices (bool created)
 		return 0;
 }
 
-void ReSIDfpBuilder::filter (const sid_filterfp_t *filter)
+void ReSIDBuilder::filter (const sid_filter_t *filter)
 {
     int size = sidobjs.size ();
 	m_status = true;
     for (int i = 0; i < size; i++)
 	{
-		ReSIDfp *sid = (ReSIDfp *) sidobjs[i];
+		ReSID *sid = (ReSID *) sidobjs[i];
         if (!sid->filter (filter))
-            goto ReSIDfpBuilder_sidFilterDef_error;
+            goto ReSIDBuilder_sidFilterDef_error;
     }
 return;
 
-ReSIDfpBuilder_sidFilterDef_error:
+ReSIDBuilder_sidFilterDef_error:
     m_error  = ERR_FILTER_DEFINITION;
     m_status = false;
 }
 
-void ReSIDfpBuilder::filter (bool enable)
+void ReSIDBuilder::filter (bool enable)
 {
     int size = sidobjs.size ();
 	m_status = true;
     for (int i = 0; i < size; i++)
 	{
-		ReSIDfp *sid = (ReSIDfp *) sidobjs[i];
+		ReSID *sid = (ReSID *) sidobjs[i];
         sid->filter (enable);
     }
 }
 
 // Find a free SID of the required specs
-sidemu *ReSIDfpBuilder::lock (c64env *env, sid2_model_t model)
+sidemu *ReSIDBuilder::lock (c64env *env, sid2_model_t model)
 {
     int size = sidobjs.size ();
     m_status = true;
 
     for (int i = 0; i < size; i++)
     {
-        ReSIDfp *sid = (ReSIDfp *) sidobjs[i];
+        ReSID *sid = (ReSID *) sidobjs[i];
         if (sid->lock (env))
 		{
             sid->model (model);
@@ -194,13 +194,13 @@ sidemu *ReSIDfpBuilder::lock (c64env *env, sid2_model_t model)
 }
 
 // Allow something to use this SID
-void ReSIDfpBuilder::unlock (sidemu *device)
+void ReSIDBuilder::unlock (sidemu *device)
 {
     int size = sidobjs.size ();
     // Maek sure this is our SID
     for (int i = 0; i < size; i++)
     {
-        ReSIDfp *sid = (ReSIDfp *) sidobjs[i];
+        ReSID *sid = (ReSID *) sidobjs[i];
         if (sid == device)
 		{   // Unlock it
             sid->lock (NULL);
@@ -210,7 +210,7 @@ void ReSIDfpBuilder::unlock (sidemu *device)
 }
 
 // Remove all SID emulations.
-void ReSIDfpBuilder::remove ()
+void ReSIDBuilder::remove ()
 {
     int size = sidobjs.size ();
     for (int i = 0; i < size; i++)

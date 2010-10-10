@@ -105,7 +105,7 @@ void SidFilter::read (ini_fd_t ini, const char *heading)
 }
 
 // Get filter
-const sid_filter_t *SidFilter::provide () const
+const sid_filterfp_t *SidFilter::provide () const
 {
     if (!m_status)
         return NULL;
@@ -119,15 +119,15 @@ const SidFilter &SidFilter::operator= (const SidFilter &filter)
     return filter;
 }
 
-// Copy sidplay2 sid_filter_t object
-const sid_filter_t &SidFilter::operator= (const sid_filter_t &filter)
+// Copy sidplay2 sid_filterfp_t object
+const sid_filterfp_t &SidFilter::operator= (const sid_filterfp_t &filter)
 {
     m_filter = filter;
     m_status = true;
     return filter;
 }
 
-const sid_filter_t *SidFilter::operator= (const sid_filter_t *filter)
+const sid_filterfp_t *SidFilter::operator= (const sid_filterfp_t *filter)
 {
     m_status = false;
     if (filter)

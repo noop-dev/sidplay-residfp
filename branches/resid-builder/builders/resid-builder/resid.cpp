@@ -27,34 +27,33 @@
 #   include <new>
 #endif
 
-#include "residfp/siddefs-fp.h"
-#include "residfp.h"
-#include "residfp-emu.h"
+#include "resid/siddefs.h"
+#include "resid.h"
+#include "resid-emu.h"
 
-char ReSIDfp::m_credit[];
+char ReSID::m_credit[];
 
-ReSIDfp::ReSIDfp (sidbuilder *builder)
+ReSID::ReSID (sidbuilder *builder)
 :sidemu(builder),
  m_context(NULL),
  m_phase(EVENT_CLOCK_PHI1),
 #ifdef HAVE_EXCEPTIONS
- m_sid(*(new(std::nothrow) RESIDFP::SIDFP)),
+ m_sid(*(new(std::nothrow) RESID_NS::RESID)),
 #else
- m_sid(*(new RESIDFP::SIDFP)),
+ m_sid(*(new RESID_NS::RESID)),
 #endif
  m_status(true),
- m_locked(false),
- m_optimisation(0)
+ m_locked(false)
 {
     char *p = m_credit;
     m_error = "N/A";
 
     // Setup credits
-    sprintf (p, "ReSIDfp V%s Engine:", VERSION);
+    sprintf (p, "ReSID V%s Engine:", VERSION);
     p += strlen (p) + 1;
     strcpy  (p, "\t(C) 1999-2002 Simon White <sidplay2@yahoo.com>");
     p += strlen (p) + 1;
-    sprintf (p, "MOS6581 (SID) Emulation (ReSIDfp V%s):", RESIDFP::resid_version_string);
+    sprintf (p, "MOS6581 (SID) Emulation (ReSID V%s):", RESID_NS::resid_version_string);
     p += strlen (p) + 1;
     sprintf (p, "\t(C) 1999-2002 Dag Lem <resid@nimrod.no>");
     p += strlen (p) + 1;
@@ -72,87 +71,102 @@ ReSIDfp::ReSIDfp (sidbuilder *builder)
     reset (0);
 }
 
-ReSIDfp::~ReSIDfp ()
+ReSID::~ReSID ()
 {
     if (&m_sid)
         delete &m_sid;
     delete[] m_buffer;
 }
 
-bool ReSIDfp::filter (const sid_filterfp_t *filter)
+bool ReSID::filter (const sid_filter_t *filter)
 {
-    /* Set sensible defaults, will override them if new ones provided. */
-    m_sid.get_filter().set_distortion_properties(0.5f, 3.3e6f);
-    m_sid.get_filter().set_type3_properties(1.37e6f, 1.70e8f, 1.006f, 1.55e4f);
-    m_sid.get_filter().set_type4_properties(5.5f, 20.f);
-    m_sid.set_voice_nonlinearity(1.f);
+    RESID_NS::fc_point fc[0x802];
+    const RESID_NS::fc_point *f0 = fc;
+    int   points = 0;
 
-    /* Set whatever data is provided in the filter def.
-     * XXX: we should check that if one param in set is provided,
-     * all are provided. */
-    if (filter != NULL) {
-        if (filter->baseresistance != 0.f)
-            m_sid.get_filter().set_type3_properties(
-                filter->baseresistance, filter->offset, filter->steepness, filter->minimumfetresistance
-            );
+    if (filter == NULL)
+    {   // Select default filter
+        m_sid.fc_default (f0, points);
+    }
+    else
+    {   // Make sure there are enough filter points and they are legal
+        points = filter->points;
+        if ((points < 2) || (points > 0x800))
+            return false;
 
-        if (filter->k != 0.f)
-            m_sid.get_filter().set_type4_properties(filter->k, filter->b);
-
-        if (filter->attenuation != 0.f)
-            m_sid.get_filter().set_distortion_properties(
-                filter->attenuation, filter->distortion_nonlinearity
-            );
-
-        if (filter->voice_nonlinearity != 0.f)
-            m_sid.set_voice_nonlinearity(filter->voice_nonlinearity);
+        {
+            const sid_fc_t  fstart = {-1, 0};
+            const sid_fc_t *fprev  = &fstart, *fin = filter->cutoff;
+            RESID_NS::fc_point *fout = fc;
+            // Last check, make sure they are list in numerical order
+            // for both axis
+            while (points-- > 0)
+            {
+                if ((*fprev)[0] >= (*fin)[0])
+                    return false;
+                fout++;
+                (*fout)[0] = (RESID_NS::sound_sample) (*fin)[0];
+                (*fout)[1] = (RESID_NS::sound_sample) (*fin)[1];
+                fprev      = fin++;
+            }
+            // Updated ReSID interpolate requires we
+            // repeat the end points
+            (*(fout+1))[0] = (*fout)[0];
+            (*(fout+1))[1] = (*fout)[1];
+            fc[0][0] = fc[1][0];
+            fc[0][1] = fc[1][1];
+            points   = filter->points + 2;
+        }
     }
 
+    // function from reSID
+    points--;
+    RESID_NS::interpolate (f0, f0 + points, m_sid.fc_plotter (), 1.0);
     return true;
 }
 
 // Standard component options
-void ReSIDfp::reset (uint8_t volume)
+void ReSID::reset (uint8_t volume)
 {
     m_accessClk = 0;
     m_sid.reset ();
     m_sid.write (0x18, volume);
 }
 
-uint8_t ReSIDfp::read (uint_least8_t addr)
+uint8_t ReSID::read (uint_least8_t addr)
 {
     clock();
     return m_sid.read (addr);
 }
 
-void ReSIDfp::write (uint_least8_t addr, uint8_t data)
+void ReSID::write (uint_least8_t addr, uint8_t data)
 {
     clock();
     m_sid.write (addr, data);
 }
 
-void ReSIDfp::clock()
+void ReSID::clock()
 {
     cycle_count cycles = m_context->getTime(m_accessClk, m_phase);
     m_accessClk += cycles;
     m_bufferpos += m_sid.clock(cycles, (short *) m_buffer + m_bufferpos, OUTPUTBUFFERSIZE - m_bufferpos, 1);
 }
 
-void ReSIDfp::filter (bool enable)
+void ReSID::filter (bool enable)
 {
     m_sid.enable_filter (enable);
 }
 
-void ReSIDfp::sampling (float systemclock, float freq)
+void ReSID::sampling (float systemclock, float freq)
 {
-    if (! m_sid.set_sampling_parameters (systemclock, RESIDFP::SAMPLE_RESAMPLE_INTERPOLATE, freq)) {
+    if (! m_sid.set_sampling_parameters (systemclock, RESID_NS::SAMPLE_RESAMPLE_INTERPOLATE, freq)) {
         m_status = false;
         m_error = "Unable to set desired output frequency.";
     }
 }
 
 // Set execution environment and lock sid to it
-bool ReSIDfp::lock (c64env *env)
+bool ReSID::lock (c64env *env)
 {
     if (env == NULL)
     {
@@ -172,10 +186,10 @@ bool ReSIDfp::lock (c64env *env)
 }
 
 // Set the emulated SID model
-void ReSIDfp::model (sid2_model_t model)
+void ReSID::model (sid2_model_t model)
 {
     if (model == SID2_MOS8580)
-        m_sid.set_chip_model (RESIDFP::MOS8580FP);
+        m_sid.set_chip_model (RESID_NS::MOS8580);
     else
-        m_sid.set_chip_model (RESIDFP::MOS6581FP);
+        m_sid.set_chip_model (RESID_NS::MOS6581);
 }

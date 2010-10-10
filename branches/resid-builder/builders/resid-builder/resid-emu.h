@@ -19,24 +19,24 @@
 #  include "config.h"
 #endif
 
-#include "residfp/sid.h"
+#include "resid/sid.h"
 
 #ifdef RESID_NAMESPACE
-#   define RESIDFP ::RESID_NAMESPACE
+#   define RESID_NS ::RESID_NAMESPACE
 #else
-#   define RESIDFP
+#   define RESID_NS
 #endif
 
 enum {
     OUTPUTBUFFERSIZE = 32768
 };
 
-class ReSIDfp: public sidemu
+class ReSID: public sidemu
 {
 private:
     EventContext *m_context;
     event_phase_t m_phase;
-    class RESIDFP::SIDFP &m_sid;
+    class RESID_NS::RESID &m_sid;
     event_clock_t m_accessClk;
     static char   m_credit[180];
     const  char  *m_error;
@@ -45,8 +45,8 @@ private:
     uint_least8_t m_optimisation;
 
 public:
-    ReSIDfp  (sidbuilder *builder);
-    ~ReSIDfp (void);
+    ReSID  (sidbuilder *builder);
+    ~ReSID (void);
 
     // Standard component functions
     const char   *credits (void) {return m_credit;}
@@ -66,7 +66,7 @@ public:
 
     // Specific to resid
     void sampling (float systemclock, float freq);
-    bool filter   (const sid_filterfp_t *filter);
+    bool filter   (const sid_filter_t *filter);
     void model    (sid2_model_t model);
     // Must lock the SID before using the standard functions.
     bool lock     (c64env *env);

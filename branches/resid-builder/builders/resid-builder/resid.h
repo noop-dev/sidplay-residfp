@@ -15,8 +15,8 @@
  *                                                                         *
  ***************************************************************************/
 
-#ifndef _residfp_h_
-#define _residfp_h_
+#ifndef _resid_h_
+#define _resid_h_
 
 /* Since ReSID is not part of this project we are actually
  * creating a wrapper instead of implementing a SID emulation
@@ -30,7 +30,7 @@
  * ReSID Builder Class
  ***************************************************************************/
 // Create the SID builder object
-class SID_EXTERN ReSIDfpBuilder: public sidbuilder
+class SID_EXTERN ReSIDBuilder: public sidbuilder
 {
 protected:
     std::vector<sidemu *> sidobjs;
@@ -41,8 +41,8 @@ private:
     const char *m_error;
 
 public:
-    ReSIDfpBuilder  (const char * const name);
-    ~ReSIDfpBuilder (void);
+    ReSIDBuilder  (const char * const name);
+    ~ReSIDBuilder (void);
     // true will give you the number of used devices.
     //    return values: 0 none, positive is used sids
     // false will give you all available sids.
@@ -58,7 +58,7 @@ public:
 
     // Settings that affect all SIDs
     void filter   (bool enable);
-    void filter   (const sid_filterfp_t *filter);
+    void filter   (const sid_filter_t *filter);
 };
 
 #endif // _resid_h_
