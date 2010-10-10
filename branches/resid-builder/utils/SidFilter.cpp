@@ -40,6 +40,7 @@ SidFilter::~SidFilter ()
 
 void SidFilter::clear ()
 {
+    m_filter.points = 0;
     m_status        = false;
     m_errorString   = "SID Filter: No filter loaded";
 }
@@ -62,6 +63,8 @@ void SidFilter::read (const char *filename)
 
 void SidFilter::read (ini_fd_t ini, const char *heading)
 {
+    int type = 1;
+
     clear ();
     m_status = true;
 
@@ -71,21 +74,141 @@ void SidFilter::read (ini_fd_t ini, const char *heading)
         return;
     }
 
+    (void) ini_locateKey (ini, "type");
+    (void) ini_readInt   (ini, &type);
+    switch (type)
+    {
+    case 1:
+        readType1 (ini);
+    break;
+
+    case 2:
+        readType2 (ini);
+    break;
+
+    default:
+        readType3 (ini);
+        //m_status = false;
+        //m_errorString = "SID Filter: Invalid filter type";
+    break;
+    }
+}
+
+void SidFilter::readType1 (ini_fd_t ini)
+{
+    int points;
+
+    // Does Section exist in ini file
+    if (ini_locateKey (ini, "points") < 0)
+        goto SidFilter_readType1_errorDefinition;
+    if (ini_readInt (ini, &points) < 0)
+        goto SidFilter_readType1_errorDefinition;
+
+    // Make sure there are enough filter points
+    if ((points < 2) || (points > 0x800))
+        goto SidFilter_readType1_errorDefinition;
+    m_filter.points = (uint_least16_t) points;
+
+    // Set the ini reader up for array access
+    if (ini_listDelims (ini, ",") < 0)
+        goto SidFilter_readType1_errorMemory;
+
+    {
+        char key[12];
+        int  reg = -1, fc = -1;
+        for (int i = 0; i < m_filter.points; i++)
+        {   // First lets read the SID cutoff register value
+            sprintf (key, "point%d", i + 1);
+            ini_locateKey (ini, key);
+            if (ini_readInt (ini, &reg) < 0)
+                goto SidFilter_readType1_errorDefinition;
+            if (ini_readInt (ini, &fc)  < 0)
+                goto SidFilter_readType1_errorDefinition;
+
+            // Got valid reg/fc
+            m_filter.cutoff[i][0] = (uint) reg;
+            m_filter.cutoff[i][1] = (uint) fc;
+        }
+    }
+return;
+
+SidFilter_readType1_errorDefinition:
+    clear ();
+    m_errorString = "SID Filter: Invalid Type 1 filter definition";
+    m_status = false;
+return;
+
+SidFilter_readType1_errorMemory:
+    m_errorString = "SID Filter: Out of memory";
+    m_status = false;
+}
+
+void SidFilter::readType2 (ini_fd_t ini)
+{
+    double fs, fm, ft;
+
+    // Read filter parameters
+    ini_locateKey (ini, "fs");
+    if (ini_readDouble (ini, &fs) < 0)
+        goto SidFilter_readType2_errorDefinition;
+    ini_locateKey (ini, "fm");
+    if (ini_readDouble (ini, &fm) < 0)
+        goto SidFilter_readType2_errorDefinition;
+    ini_locateKey (ini, "ft");
+    if (ini_readDouble (ini, &ft) < 0)
+        goto SidFilter_readType2_errorDefinition;
+
+    // Calculate the filter
+    calcType2 (fs, fm, ft);
+return;
+
+SidFilter_readType2_errorDefinition:
+    clear ();
+    m_errorString = "SID Filter: Invalid Type 2 filter definition";
+    m_status = false;
+}
+
+// Calculate a Type 2 filter (Sidplay 1 Compatible)
+void SidFilter::calcType2 (double fs, double fm, double ft)
+{
+    double fcMax = 1.0;
+    double fcMin = 0.01;
+    double fc;
+
+    // Definition from reSID
+    m_filter.points = 0x100;
+
+    // Create filter
+    for (uint i = 0; i < 0x100; i++)
+    {
+        uint rk = i << 3;
+        m_filter.cutoff[i][0] = rk;
+        fc = exp ((double) rk / 0x800 * log (fs)) / fm + ft;
+        if (fc < fcMin)
+            fc = fcMin;
+        if (fc > fcMax)
+            fc = fcMax;
+        m_filter.cutoff[i][1] = (uint) (fc * 4100);
+    }
+}
+
+void SidFilter::readType3 (ini_fd_t ini)
+{
     struct parampair {
         const char* name;
         float*      address;
     };
 
     struct parampair sidparams[] = {
-        { "DistortionAttenuation",	&m_filter.attenuation           },
-        { "DistortionNonlinearity",	&m_filter.distortion_nonlinearity },
-        { "VoiceNonlinearity",		&m_filter.voice_nonlinearity    },
-        { "Type3BaseResistance",	&m_filter.baseresistance        },
-        { "Type3Offset",		&m_filter.offset                },
-        { "Type3Steepness",		&m_filter.steepness             },
-        { "Type3MinimumFETResistance",	&m_filter.minimumfetresistance  },
-        { "Type4K",			&m_filter.k                     },
-        { "Type4B",			&m_filter.b                     },
+        { "DistortionAttenuation",	&m_filterfp.attenuation           },
+        { "DistortionNonlinearity",	&m_filterfp.distortion_nonlinearity },
+        { "VoiceNonlinearity",		&m_filterfp.voice_nonlinearity    },
+        { "Type3BaseResistance",	&m_filterfp.baseresistance        },
+        { "Type3Offset",		&m_filterfp.offset                },
+        { "Type3Steepness",		&m_filterfp.steepness             },
+        { "Type3MinimumFETResistance",	&m_filterfp.minimumfetresistance  },
+        { "Type4K",			&m_filterfp.k                     },
+        { "Type4B",			&m_filterfp.b                     },
         { NULL,				NULL                            }
     };
 
@@ -105,24 +228,48 @@ void SidFilter::read (ini_fd_t ini, const char *heading)
 }
 
 // Get filter
-const sid_filterfp_t *SidFilter::provide () const
+const sid_filter_t *SidFilter::provide () const
 {
     if (!m_status)
         return NULL;
     return &m_filter;
 }
 
+// Get filter
+const sid_filterfp_t *SidFilter::providefp () const
+{
+    if (!m_status)
+        return NULL;
+    return &m_filterfp;
+}
+
 // Copy filter from another SidFilter class
 const SidFilter &SidFilter::operator= (const SidFilter &filter)
 {
     (void) operator= (filter.provide ());
+    (void) operator= (filter.providefp ());
     return filter;
 }
 
-// Copy sidplay2 sid_filterfp_t object
-const sid_filterfp_t &SidFilter::operator= (const sid_filterfp_t &filter)
+// Copy sidplay2 sid_filter_t object
+const sid_filter_t &SidFilter::operator= (const sid_filter_t &filter)
 {
     m_filter = filter;
+    m_status = true;
+    return filter;
+}
+
+const sid_filter_t *SidFilter::operator= (const sid_filter_t *filter)
+{
+    m_status = false;
+    if (filter)
+        (void) operator= (*filter);
+    return filter;
+}
+
+const sid_filterfp_t &SidFilter::operator= (const sid_filterfp_t &filter)
+{
+    m_filterfp = filter;
     m_status = true;
     return filter;
 }

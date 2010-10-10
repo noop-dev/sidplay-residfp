@@ -22,10 +22,15 @@ class SID_EXTERN SidFilter
 {
 protected:
     bool  m_status;
-    const char *m_errorString;
-    sid_filterfp_t m_filter;
+    const char    *m_errorString;
+    sid_filter_t   m_filter;
+    sid_filterfp_t m_filterfp;
 
 protected:
+    void readType1 (ini_fd_t ini);
+    void readType2 (ini_fd_t ini);
+    void readType3 (ini_fd_t ini);
+    bool get_ini_value (ini_fd_t ini, char *name, double *value);
     void clear ();
 
 public:
@@ -34,11 +39,15 @@ public:
 
     void                read      (const char *filename);
     void                read      (ini_fd_t ini, const char *heading);
+    void                calcType2 (double fs, double fm, double ft);
     const char*         error     (void) { return m_errorString; }
-    const sid_filterfp_t* provide   () const;
+    const sid_filter_t* provide   () const;
+    const sid_filterfp_t* providefp   () const;
 
     operator bool () { return m_status; }
     const SidFilter&    operator= (const SidFilter    &filter);
+    const sid_filter_t &operator= (const sid_filter_t &filter);
+    const sid_filter_t *operator= (const sid_filter_t *filter);
     const sid_filterfp_t &operator= (const sid_filterfp_t &filter);
     const sid_filterfp_t *operator= (const sid_filterfp_t *filter);
 };
