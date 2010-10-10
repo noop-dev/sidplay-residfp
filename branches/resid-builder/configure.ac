@@ -179,7 +179,7 @@ libsidplay2.spec
 libsidplay2.pc
 libsidutils.spec
 libsidutils.pc
-builders/resid-builder/resid/siddefs-fp.h
+builders/residfp-builder/residfp/siddefs-fp.h
 ])
 
 AC_OUTPUT
