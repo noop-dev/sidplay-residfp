@@ -117,6 +117,8 @@ RESIDFP_FLAGS="$MSSE $NO_EXCEPTIONS"
 
 AC_CHECK_HEADERS([xmmintrin.h], [], [], [#define __SSE__])
 
+AC_CHECK_HEADERS([mmintrin.h], [], [], [#define __MMX__])
+
 AC_CACHE_CHECK([for working bool], ac_cv_cxx_bool,
 [AC_TRY_COMPILE(,
 [
