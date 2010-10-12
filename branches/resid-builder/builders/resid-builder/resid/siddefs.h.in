@@ -20,6 +20,10 @@
 #ifndef VICE__SIDDEFS_H__
 #define VICE__SIDDEFS_H__
 
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
 // Define bool, true, and false for C++ compilers that lack these keywords.
 #define RESID_HAVE_BOOL @RESID_HAVE_BOOL@
 
