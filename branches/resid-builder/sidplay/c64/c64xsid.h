@@ -94,8 +94,9 @@ public:
     void optimisation(uint_least8_t level) {
         m_sid->optimisation(level);
     }
-    void sampling(float systemclock, float freq) {
-        m_sid->sampling(systemclock, freq);
+    void sampling(float systemclock, float freq,
+        const sampling_method_t method, const bool fast) {
+        m_sid->sampling(systemclock, freq, method, fast);
     }
 
     // Xsid specific

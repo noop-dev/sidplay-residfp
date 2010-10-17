@@ -142,9 +142,25 @@ void ReSIDfp::filter (bool enable)
     m_sid.enable_filter (enable);
 }
 
-void ReSIDfp::sampling (float systemclock, float freq)
+void ReSIDfp::sampling (float systemclock, float freq,
+        const sampling_method_t method, const bool fast)
 {
-    if (! m_sid.set_sampling_parameters (systemclock, RESIDFP::SAMPLE_RESAMPLE_INTERPOLATE, freq)) {
+    sampling_method sampleMethod;
+    switch (method)
+    {
+    case SID2_INTERPOLATE:
+        sampleMethod = RESIDFP::SAMPLE_INTERPOLATE;
+        break;
+    case SID2_RESAMPLE_INTERPOLATE:
+        sampleMethod = RESIDFP::SAMPLE_RESAMPLE_INTERPOLATE;
+        break;
+    default:
+        m_status = false;
+        m_error = "Invalid sampling method.";
+        return;
+    }
+
+    if (! m_sid.set_sampling_parameters (systemclock, sampleMethod, freq)) {
         m_status = false;
         m_error = "Unable to set desired output frequency.";
     }
