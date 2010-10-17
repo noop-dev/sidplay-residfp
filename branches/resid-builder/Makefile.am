@@ -65,9 +65,9 @@ if HARDSID
   lib_LTLIBRARIES += builders/hardsid-builder/libhardsid-builder.la
 endif
 
-noinst_LIBRARIES = \
-builders/residfp-builder/residfp/libresidfp.a \
-builders/resid-builder/resid/libresid.a
+noinst_LTLIBRARIES = \
+builders/residfp-builder/residfp/libresidfp.la \
+builders/resid-builder/resid/libresid.la
 
 #=========================================================
 # libsidplay
@@ -168,7 +168,7 @@ else
   convolve_sse_src = 
 endif
 
-builders_residfp_builder_residfp_libresidfp_a_SOURCES = \
+builders_residfp_builder_residfp_libresidfp_la_SOURCES = \
 builders/residfp-builder/residfp/sid.h \
 builders/residfp-builder/residfp/voice.h \
 builders/residfp-builder/residfp/wave.h \
@@ -187,14 +187,14 @@ builders/residfp-builder/residfp/version.cc \
 builders/residfp-builder/residfp/convolve.cc \
 $(convolve_sse_src)
 
-builders_residfp_builder_residfp_libresidfp_a_CXXFLAGS = @RESIDFP_FLAGS@
+builders_residfp_builder_residfp_libresidfp_la_CXXFLAGS = @RESIDFP_FLAGS@
 
 #=========================================================
 # resid
 
 BUILT_SOURCES = $(noinst_DATA:.dat=.cc)
 
-builders_resid_builder_resid_libresid_a_SOURCES = \
+builders_resid_builder_resid_libresid_la_SOURCES = \
 builders/resid-builder/resid/sid.h \
 builders/resid-builder/resid/voice.h \
 builders/resid-builder/resid/wave.h \
@@ -235,7 +235,7 @@ builders/residfp-builder/residfp-builder.cpp \
 builders/residfp-builder/residfp-emu.h
 
 builders_residfp_builder_libresidfp_builder_la_LIBADD = \
-builders/residfp-builder/residfp/libresidfp.a
+builders/residfp-builder/residfp/libresidfp.la
 
 builders_residfp_builder_libresidfp_builder_la_LDFLAGS = -version-info $(LIBRESIDVERSION)
 
@@ -250,7 +250,7 @@ builders/resid-builder/resid-builder.cpp \
 builders/resid-builder/resid-emu.h
 
 builders_resid_builder_libresid_builder_la_LIBADD = \
-builders/resid-builder/resid/libresid.a
+builders/resid-builder/resid/libresid.la
 
 builders_resid_builder_libresid_builder_la_LDFLAGS = -version-info $(LIBRESIDVERSION)
 
