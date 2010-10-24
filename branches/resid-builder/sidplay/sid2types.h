@@ -71,7 +71,7 @@ struct sid2_config_t
     uint_least16_t      powerOnDelay;
     uint_least32_t      sid2crcCount;  // Max sid writes to form crc
     sampling_method_t   samplingMethod;
-    bool                fastEmu;       // Faster low-quality emulation
+    bool                fastSampling;  // Faster low-quality emulation
 };
 
 struct sid2_info_t

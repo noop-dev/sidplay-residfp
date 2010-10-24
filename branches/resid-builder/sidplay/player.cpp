@@ -430,7 +430,7 @@ Player::Player (void)
     m_cfg.powerOnDelay    = SID2_DEFAULT_POWER_ON_DELAY;
     m_cfg.sid2crcCount    = 0;
     m_cfg.samplingMethod  = SID2_RESAMPLE_INTERPOLATE;
-    m_cfg.fastEmu         = false;
+    m_cfg.fastSampling    = false;
 
     config (m_cfg);
 
