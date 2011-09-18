@@ -2,31 +2,22 @@
 #ifndef _config_h_
 #define _config_h_
 
-/* Define the sidbuilder modules at appropriate */
-#define HAVE_SIDPLAYFP_BUILDERS_RESIDFP_H
-#define HAVE_SIDPLAYFP_BUILDERS_HARDSID_H
+#define PACKAGE "libsidplayfp"
+#define VERSION "0.1.0"
 
 /* Define if your C++ compiler implements exception-handling.  */
-/* #define HAVE_EXCEPTIONS 1 */
+/* Note: exception specification is only available for MSVC > 6 */
+#if _MSC_VER > 1200
+#   define HAVE_EXCEPTIONS
+#endif
 
-/* Define if standard member ``ios::binary'' is called ``ios::bin''. */
-/* #define HAVE_IOS_BIN 1 */
+/* Define if you support file names longer than 14 characters.  */
+#define HAVE_LONG_FILE_NAMES
 
-/* Define if you have the ANSI C header files.  */
-#define STDC_HEADERS 1
+/* Define if you have the <sstream> header file.  */
+#define HAVE_SSTREAM
 
-/* Define if your processor stores words with the most significant
-   byte first (like Motorola and SPARC, unlike Intel and VAX).  */
-/* #define WORDS_BIGENDIAN */
-
-/* Define sound driver */
-/*#define HAVE_DIRECTX*/
-#define HAVE_MMSYSTEM
-
-/* Name of package */
-#define PACKAGE "sidplayfp"
-
-/* Version number of package */
-#define VERSION "0.1.0"
+/* Define if ``ios::nocreate'' is supported. */
+//#define HAVE_IOS_NOCREATE
 
 #endif // _config_h_
