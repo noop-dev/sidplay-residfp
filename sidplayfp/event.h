@@ -160,12 +160,13 @@ public:
 class EventScheduler: public EventContext
 {
 private:
+    /** EventScheduler's current clock */
     event_clock_t  currentTime;
+
+    /** The first event of the chain */
     Event *firstEvent;
 
 private:
-    void event (void);
-
     /**
     * Scan the event queue and schedule event for execution.
     *
@@ -193,13 +194,16 @@ private:
 protected:
     /** Add event to pending queue.
     *
+    * At PHI2, specify cycles=0 and Phase=PHI1 to fire on the very next PHI1.
+    *
     * @param event the event to add
-    * @param cycles the clock to fire
-    * @param phase when to fire the event
+    * @param cycles how many cycles from now to fire
+    * @param phase the phase when to fire the event
     */
     void schedule (Event &event, const event_clock_t cycles,
                    const event_phase_t phase) {
-        event.triggerTime = (cycles << 1) + currentTime + (currentTime & 1 ^ (phase == EVENT_CLOCK_PHI1 ? 0 : 1));
+        // this strange formulation always selects the next available slot regardless of specified phase.
+        event.triggerTime = (cycles << 1) + currentTime + (currentTime & 1 ^ phase);
         schedule(event);
     }
 
@@ -217,7 +221,7 @@ protected:
     *
     * @param event the event to cancel
     */
-    void cancel   (Event &event);
+    void cancel (Event &event);
 
 public:
     EventScheduler ()
