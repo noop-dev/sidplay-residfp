@@ -109,23 +109,19 @@ static const int _sidtune_psid_maxStrLen = 32;
 
 SidTune::LoadStatus SidTune::PSID_fileSupport(Buffer_sidtt<const uint_least8_t>& dataBuf)
 {
-    int clock, compatibility;
-    uint_least32_t speed;
-    uint_least32_t bufLen = dataBuf.len();
-#ifdef SIDTUNE_PSID2NG
-    clock = SIDTUNE_CLOCK_UNKNOWN;
-#else
-    clock = info.clockSpeed;
-#endif
-    compatibility = SIDTUNE_COMPATIBILITY_C64;
+    const uint_least32_t bufLen = dataBuf.len();
+
+    // File format check
+    if (bufLen<6)
+        return LOAD_NOT_MINE;
+
+    int clock = SIDTUNE_CLOCK_UNKNOWN;
+    int compatibility = SIDTUNE_COMPATIBILITY_C64;
 
     // Require minimum size to allow access to the first few bytes.
     // Require a valid ID and version number.
     const psidHeader* pHeader = (const psidHeader*)dataBuf.get();
 
-    // File format check
-    if (bufLen<6)
-        return LOAD_NOT_MINE;
     if (endian_big32((const uint_least8_t*)pHeader->id)==PSID_ID)
     {
        switch (endian_big16(pHeader->version))
@@ -176,7 +172,8 @@ SidTune::LoadStatus SidTune::PSID_fileSupport(Buffer_sidtt<const uint_least8_t>&
     info.sidChipBase1  = 0xd400;
     info.sidChipBase2  = 0;
     info.compatibility = compatibility;
-    speed              = endian_big32(pHeader->speed);
+
+    uint_least32_t speed = endian_big32(pHeader->speed);
 
     if (info.songs > SIDTUNE_MAX_SONGS)
     {
@@ -190,14 +187,13 @@ SidTune::LoadStatus SidTune::PSID_fileSupport(Buffer_sidtt<const uint_least8_t>&
     info.relocStartPage = 0;
     if ( endian_big16(pHeader->version) >= 2 )
     {
-        uint_least16_t flags = endian_big16(pHeader->flags);
+        const uint_least16_t flags = endian_big16(pHeader->flags);
         if (flags & PSID_MUS)
         {   // MUS tunes run at any speed
             clock = SIDTUNE_CLOCK_ANY;
             info.musPlayer = true;
         }
 
-#ifdef SIDTUNE_PSID2NG
         // This flags is only available for the appropriate
         // file formats
         switch (compatibility)
@@ -237,7 +233,6 @@ SidTune::LoadStatus SidTune::PSID_fileSupport(Buffer_sidtt<const uint_least8_t>&
         {
             info.sidChipBase2 = 0xd000 | (pHeader->sidChipBase2<<4);
         }
-#endif // SIDTUNE_PSID2NG
     }
 
     // Check reserved fields to force real c64 compliance
