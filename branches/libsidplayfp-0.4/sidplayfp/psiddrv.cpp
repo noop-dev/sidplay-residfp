@@ -258,7 +258,7 @@ int Player::psidDrvReloc (SidTuneInfo &tuneInfo, sid2_info_t &info)
                 mmu.fillRam(0x0314, &reloc_driver[2], 6);
 
             // Experimental restart basic trap
-            uint_least16_t addr = endian_little16(&reloc_driver[8]);
+            const uint_least16_t addr = endian_little16(&reloc_driver[8]);
             mmu.writeRomByte(0xa7ae, JMPw);
             mmu.writeRomWord(0xa7af, 0xffe1);
             mmu.writeMemWord(0x0328, addr);
