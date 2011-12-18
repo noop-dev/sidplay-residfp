@@ -540,9 +540,8 @@ int Player::initialise ()
     reset ();
 
     {
-        uint_least32_t page = ((uint_least32_t) m_tuneInfo.loadAddr
-                            + m_tuneInfo.c64dataLen - 1) >> 8;
-        if (page > 0xff)
+        const uint_least32_t page = (uint_least32_t) m_tuneInfo.loadAddr + m_tuneInfo.c64dataLen - 1;
+        if (page > 0xffff)
         {
             m_errorString = "SIDPLAYER ERROR: Size of music data exceeds C64 memory.";
             return -1;
@@ -912,25 +911,10 @@ void Player::writeMemByte_sidplay (const uint_least16_t addr, const uint8_t data
         writeMemByte_plain (addr, data);
     else
     {
-        // Get high-nibble of address.
-        switch (addr >> 12)
-        {
-        case 0xa:
-        case 0xb:
-        case 0xc:
+        if (((addr >> 12) == 0xd) && mmu.isIoArea())
+            writeMemByte_playsid (addr, data);
+        else
             mmu.writeMemByte(addr, data);
-        break;
-        case 0xd:
-            if (mmu.isIoArea())
-                writeMemByte_playsid (addr, data);
-            else
-                mmu.writeMemByte(addr, data);
-        break;
-        case 0xe:
-        case 0xf:
-        default:  // <-- just to please the compiler
-            mmu.writeMemByte(addr, data);
-        }
     }
 }
 
