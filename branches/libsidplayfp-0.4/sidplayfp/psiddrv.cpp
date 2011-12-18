@@ -163,7 +163,6 @@ extern "C" int reloc65(unsigned char** buf, int* fsize, int addr);
 
 int Player::psidDrvReloc (SidTuneInfo &tuneInfo, sid2_info_t &info)
 {
-    uint_least16_t relocAddr;
     const int startlp = tuneInfo.loadAddr >> 8;
     const int endlp   = (tuneInfo.loadAddr + (tuneInfo.c64dataLen - 1)) >> 8;
 
@@ -216,9 +215,9 @@ int Player::psidDrvReloc (SidTuneInfo &tuneInfo, sid2_info_t &info)
         return -1;
     }
 
-    relocAddr = tuneInfo.relocStartPage << 8;
-
     {   // Place psid driver into ram
+        uint_least16_t relocAddr = tuneInfo.relocStartPage << 8;
+
         uint8_t psid_driver[] = {
 #          include "psiddrv.bin"
         };
@@ -259,8 +258,7 @@ int Player::psidDrvReloc (SidTuneInfo &tuneInfo, sid2_info_t &info)
                 mmu.fillRam(0x0314, &reloc_driver[2], 6);
 
             // Experimental restart basic trap
-            uint_least16_t addr;
-            addr = endian_little16(&reloc_driver[8]);
+            uint_least16_t addr = endian_little16(&reloc_driver[8]);
             mmu.writeRomByte(0xa7ae, JMPw);
             mmu.writeRomWord(0xa7af, 0xffe1);
             mmu.writeMemWord(0x0328, addr);
