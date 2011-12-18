@@ -342,7 +342,6 @@ private:
     // Environment Function entry Points
     void           envReset           (const bool safe);
     void           envReset           (void) { envReset (true); }
-    inline uint8_t envReadRomByte     (const uint_least16_t addr);
     inline uint8_t envReadMemByte     (const uint_least16_t addr);
     inline void    envWriteMemByte    (const uint_least16_t addr, const uint8_t data);
     bool           envCheckBankJump   (const uint_least16_t addr);
