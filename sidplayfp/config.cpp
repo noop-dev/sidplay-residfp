@@ -231,7 +231,7 @@ int Player::config (const sid2_config_t &cfg)
             }
 
             /* inform ReSID of the desired sampling rate */
-            for (int i = 0; i < SID2_MAX_SIDS; i += 1) {
+            for (int i = 0; i < SID2_MAX_SIDS; i++) {
                 sid[i]->sampling((long)m_cpuFreq, cfg.frequency, cfg.samplingMethod, false);
             }
         }

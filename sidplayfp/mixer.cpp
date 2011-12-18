@@ -100,9 +100,9 @@ void Player::mixer (void)
         int sample1 = 0;
         int sample2 = 0;
         int j;
-        for (j = 0; j < m_fastForwardFactor; j += 1) {
+        for (j = 0; j < m_fastForwardFactor; j++) {
             sample1 += buf1[i + j];
-            if (buf2 != NULL)
+            if (buf2)
                 sample2 += buf2[i + j];
         }
         /* increment i to mark we ate some samples, finish the boxcar thing. */
@@ -113,10 +113,10 @@ void Player::mixer (void)
         sample2 /= j;
 
         /* mono mix. */
-        if (buf2 != NULL && m_cfg.playback != sid2_stereo)
+        if (buf2 && m_cfg.playback != sid2_stereo)
             sample1 = (sample1 + sample2) / 2;
         /* stereo clone, for people who keep stereo on permanently. */
-        if (buf2 == NULL && m_cfg.playback == sid2_stereo)
+        if (!buf2 && m_cfg.playback == sid2_stereo)
             sample2 = sample1;
 
         *buf++ = (short int)sample1;
@@ -128,14 +128,14 @@ void Player::mixer (void)
     }
 
     /* move the unhandled data to start of buffer, if any. */
-    int j = 0;
-    for (j = 0; j < samples - i; j += 1) {
+    int j;
+    for (j = 0; j < samples - i; j++) {
         buf1[j] = buf1[i + j];
-        if (buf2 != NULL)
+        if (buf2)
             buf2[j] = buf2[i + j];
     }
     chip1->bufferpos(j);
-    if (buf2 != NULL)
+    if (buf2)
         chip2->bufferpos(j);
 
     /* Post a callback to ourselves. */
