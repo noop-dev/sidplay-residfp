@@ -289,12 +289,6 @@ private:
     uint_least32_t m_sampleIndex;
     short         *m_sampleBuffer;
 
-    // RTC clock - Based of mixer sample period
-    // to make sure time is right when we ask
-    // for n samples
-    event_clock_t  m_rtcClock;
-    event_clock_t  m_rtcPeriod;
-
     // C64 environment settings
     MMU mmu;
 
@@ -306,7 +300,6 @@ private:
     int       environment    (sid2_env_t env);
     void      fakeIRQ        (void);
     int       initialise     (void);
-    void      nextSequence   (void);
     void      mixer          (void);
     void      mixerReset     (void);
     void      mileageCorrect (void);
