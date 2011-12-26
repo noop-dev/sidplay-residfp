@@ -59,7 +59,7 @@ bool SidTune::MUS_detect(const void* buffer, const uint_least32_t bufLen,
     // Add length of voice 1 data.
     voice1Index += endian_16(spMus[3],spMus[2]);
     // Add length of voice 2 data.
-    uint_least32_t voice2Index = voice1Index + endian_16(spMus[5],spMus[4]);
+    const uint_least32_t voice2Index = voice1Index + endian_16(spMus[5],spMus[4]);
     // Add length of voice 3 data.
     voice3Index = voice2Index + endian_16(spMus[7],spMus[6]);
     return ((endian_16(spMus[voice1Index-2],spMus[voice1Index+1-2]) == SIDTUNE_MUS_HLT_CMD)
