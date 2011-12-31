@@ -54,7 +54,7 @@ public:
     // Standard SID functions
     void          clock   ();
     void          filter  (bool enable);
-    void          voice   (uint_least8_t num, bool mute) {;}
+    void          voice   (uint_least8_t num, bool mute) { m_sid.mute(num, mute); }
 
     SID_DEPRECATED operator bool () { return m_status; }
     bool          getStatus() const { return m_status; }

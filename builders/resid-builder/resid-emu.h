@@ -44,6 +44,7 @@ private:
     const  char  *m_error;
     bool          m_status;
     bool          m_locked;
+    uint8_t       m_voiceMask;
     static char   m_credit[180];
 
 public:
@@ -61,7 +62,7 @@ public:
     // Standard SID functions
     void          clock   ();
     void          filter  (bool enable);
-    void          voice   (uint_least8_t num, bool mute) {;}
+    void          voice   (uint_least8_t num, bool mute);
 
     SID_DEPRECATED operator bool () { return m_status; }
     bool          getStatus() const { return m_status; }
