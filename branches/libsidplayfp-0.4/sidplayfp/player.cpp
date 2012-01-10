@@ -968,6 +968,8 @@ void Player::reset (void)
         mmu.writeMemByte(0x02a6, 1);
     else // SIDTUNE_CLOCK_NTSC
         mmu.writeMemByte(0x02a6, 0);
+
+    irqCount = 0;
 }
 
 // This resets the cpu once the program is loaded to begin

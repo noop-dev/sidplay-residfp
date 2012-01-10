@@ -341,6 +341,9 @@ private:
     inline uint8_t envReadMemDataByte (const uint_least16_t addr);
     inline void    envSleep           (void);
 
+    /** Number of sources asserting IRQ */
+    int   irqCount;
+
 #ifdef PC64_TESTSUITE
     void   envLoadFile (const char *file)
     {
@@ -357,9 +360,9 @@ private:
     uint_least32_t (Player::*output) (char *buffer);
 
     inline void interruptIRQ (const bool state);
-    inline void interruptNMI (void);
+    inline void interruptNMI ();
     inline void interruptRST (void);
-    void signalAEC (const bool state) { cpu.aecSignal (state); }
+    void signalAEC (const bool state) { cpu.setRDY (state); }
     void lightpen  () { vic.lightpen (); }
 
     // PSID driver
@@ -419,19 +422,34 @@ void Player::envSleep (void)
     }
 }
 
+/**
+* CPU IRQ line control. IRQ is asserted if any source asserts IRQ.
+* (Maintains a counter of calls with state=true vs. state=false.)
+*/
 void Player::interruptIRQ (const bool state)
 {
     if (state)
     {
-        if (m_info.environment == sid2_envR)
-            cpu.triggerIRQ ();
-        else
-            fakeIRQ ();
+        if (irqCount == 0)
+        {
+            if (m_info.environment == sid2_envR)
+                cpu.triggerIRQ ();
+            else
+                fakeIRQ ();
+        }
+
+        irqCount ++;
     }
     else
-        cpu.clearIRQ ();
+        irqCount --;
+
+        if (irqCount == 0)
+            cpu.clearIRQ ();
 }
 
+/**
+* CPU NMI line control. NMI is asserted if any source asserts NMI.
+*/
 void Player::interruptNMI ()
 {
     cpu.triggerNMI ();
