@@ -115,7 +115,6 @@
 #include "sidplayfp/sidendian.h"
 
 /** @internal
-/**
 * Cycle-exact 6502/6510 emulation core.
 *
 * Code is based on work by Simon A. White <sidplay2@yahoo.com>.
@@ -126,6 +125,16 @@
 */
 class MOS6510
 {
+protected:
+    /** Stack page location */
+    static const uint16_t SP_PAGE = 0x01;
+
+    static const int SR_BREAK = 4;
+
+public:
+    /** Status register interrupt bit. */
+    static const int SR_INTERRUPT = 2;
+
 protected:
     struct ProcessorCycle
     {
@@ -202,7 +211,10 @@ protected:
     struct ProcessorCycle  instrTable[0x103][8];
 
 protected:
+    /** Represents an instruction subcycle that writes */
     EventCallback<MOS6510> m_nosteal;
+
+    /** Represents an instruction subcycle that reads */
     EventCallback<MOS6510> m_steal;
 
     void eventWithoutSteals  (void);
@@ -328,7 +340,6 @@ protected:
     inline void sta_instr     (void);
     inline void stx_instr     (void);
     inline void sty_instr     (void);
-    inline void tas_instr     (void);
     inline void tax_instr     (void);
     inline void tay_instr     (void);
     inline void tsx_instr     (void);
