@@ -127,7 +127,7 @@ class MOS6510
 {
 protected:
     /** Stack page location */
-    static const uint16_t SP_PAGE = 0x01;
+    static const uint8_t SP_PAGE = 0x01;
 
     static const int SR_BREAK = 4;
 
@@ -154,37 +154,15 @@ protected:
 
     int cycleCount;
 
-    uint_least16_t instrStartPC;
-    int_least8_t   lastAddrCycle;
-
-    /** Pointers to the current instruction cycle */
-    uint_least16_t Cycle_EffectiveAddress;
-    uint_least16_t Cycle_HighByteWrongEffectiveAddress;
-    uint8_t        Cycle_Data;
-    uint_least16_t Cycle_Pointer;
-
-    uint8_t        Register_Accumulator;
-    uint8_t        Register_X;
-    uint8_t        Register_Y;
-    uint_least32_t Register_ProgramCounter;
-    bool           flagN;
-    bool           flagC;
-    bool           flagD;
-    bool           flagZ;
-    bool           flagV;
-    bool           flagI;
-    bool           flagB;
-    uint_least16_t Register_StackPointer;
-
     /* Interrupts */
+
+    /** IRQ asserted on CPU */
+    bool irqAsserted;
 
     /** IRQ requested */
     bool irqFlag;
 
-    /** IRQ asserted on CPU */
-     bool irqAsserted;
-
-     /** When IRQ can trigger earliest */
+    /** When IRQ can trigger earliest */
     event_clock_t  irqClk;
 
     /** NMI positive edge sent by CIA2? */
@@ -196,9 +174,31 @@ protected:
     /** Address Controller, blocks reads */
     bool rdy;
 
+    bool           flagN;
+    bool           flagC;
+    bool           flagD;
+    bool           flagZ;
+    bool           flagV;
+    bool           flagI;
+    bool           flagB;
+
+    /** Pointers to the current instruction cycle */
+    uint_least32_t Register_ProgramCounter;
+
+    uint_least16_t Cycle_EffectiveAddress;
+    uint_least16_t Cycle_HighByteWrongEffectiveAddress;
+    uint_least16_t Cycle_Pointer;
+
+    uint8_t        Cycle_Data;
+    uint8_t        Register_StackPointer;
+    uint8_t        Register_Accumulator;
+    uint8_t        Register_X;
+    uint8_t        Register_Y;
+
     struct ProcessorCycle       fetchCycle;
 
     /** Debug info */
+    uint_least16_t instrStartPC;
     uint_least16_t Instr_Operand;
 
     FILE *m_fdbg;
