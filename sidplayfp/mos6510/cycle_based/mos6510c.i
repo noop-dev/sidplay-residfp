@@ -310,18 +310,18 @@ void MOS6510::setStatusRegister(const uint8_t sr)
 
 
 /**
-* Handle bus access signals
+* Handle bus access signals. When RDY line is asserted, the CPU
+* will pause when executing the next read operation.
 *
-* @param state
-*            new state for AEC signals
+* @param rdy new state for RDY signal
 */
-void MOS6510::aecSignal (const bool newAec)
+void MOS6510::setRDY (const bool newAec)
 {
-    if (aec == newAec)
+    if (rdy == newAec)
         return;
 
-    aec = newAec;
-    if (aec) {
+    rdy = newAec;
+    if (rdy) {
         eventContext.cancel(m_steal);
         eventContext.schedule(m_nosteal, 0, EVENT_CLOCK_PHI2);
     } else {
@@ -369,7 +369,6 @@ void MOS6510::PopSR (void)
 // Interrupt Routines                                                      //
 //-------------------------------------------------------------------------//
 //-------------------------------------------------------------------------//
-#define iIRQSMAX 3
 
 /**
 * This forces the CPU to abort whatever it is doing and immediately
@@ -393,10 +392,13 @@ void MOS6510::triggerRST (void)
 */
 void MOS6510::triggerNMI (void)
 {
+    if (nmiFlag)
+        return;
+
     nmiFlag = true;
     nmiClk = cycleCount;
     /* maybe process 1 clock of interrupt delay. */
-    if (! aec) {
+    if (! rdy) {
         eventContext.cancel(m_steal);
         eventContext.schedule(m_steal, 0, EVENT_CLOCK_PHI2);
     }
@@ -410,20 +412,16 @@ void MOS6510::triggerNMI (void)
 void MOS6510::triggerIRQ (void)
 {
     /* mark interrupt arrival time */
-    if (irqs == 0) {
-        irqFlag = true;
-        irqClk = cycleCount;
-        /* maybe process 1 clock of interrupt delay. */
-        if (! aec) {
-            eventContext.cancel(m_steal);
-            eventContext.schedule(m_steal, 0, EVENT_CLOCK_PHI2);
-        }
-    }
+    if (irqAsserted)
+        return;
 
-    if (++irqs > iIRQSMAX)
-    {
-        fprintf (m_fdbg, "\nMOS6510 ERROR: Bizarre attempt to signal more than %d \n\n", iIRQSMAX);
-        exit (-1);
+    irqFlag = true;
+    irqAsserted = true;
+    irqClk = cycleCount;
+    /* maybe process 1 clock of interrupt delay. */
+    if (! rdy) {
+        eventContext.cancel(m_steal);
+        eventContext.schedule(m_steal, 0, EVENT_CLOCK_PHI2);
     }
 }
 
@@ -433,10 +431,7 @@ void MOS6510::triggerIRQ (void)
 */
 void MOS6510::clearIRQ (void)
 {
-    if (--irqs < 0) {
-        fprintf (m_fdbg, "\nMOS6510 ERROR: Bizarre attempt to clear untriggered IRQ.\n\n");
-        exit (-1);
-    }
+    irqAsserted = false;
 }
 
 void MOS6510::interruptsAndNextOpcode (void)
@@ -495,20 +490,14 @@ void MOS6510::RSTHiRequest (void)
     Register_ProgramCounter = env->envReadMemDataByte(0xFFFD);
 }
 
-/*void MOS6510::RSTRequest (void)
-{
-    env->envReset ();
-}*/
-
 void MOS6510::NMILoRequest (void)
 {
-    endian_16lo8 (Cycle_EffectiveAddress, env->envReadMemDataByte (0xFFFA));
+    endian_32lo8 (Register_ProgramCounter, env->envReadMemDataByte (0xFFFA));
 }
 
 void MOS6510::NMIHiRequest (void)
 {
-    endian_16hi8  (Cycle_EffectiveAddress, env->envReadMemDataByte (0xFFFB));
-    endian_32lo16 (Register_ProgramCounter, Cycle_EffectiveAddress);
+    endian_32hi8 (Register_ProgramCounter, env->envReadMemDataByte (0xFFFB));
 }
 
 void MOS6510::IRQRequest (void)
@@ -519,13 +508,12 @@ void MOS6510::IRQRequest (void)
 
 void MOS6510::IRQLoRequest (void)
 {
-    endian_16lo8 (Cycle_EffectiveAddress, env->envReadMemDataByte (0xFFFE));
+    endian_32lo8 (Register_ProgramCounter, env->envReadMemDataByte (0xFFFE));
 }
 
 void MOS6510::IRQHiRequest (void)
 {
-    endian_16hi8  (Cycle_EffectiveAddress, env->envReadMemDataByte (0xFFFF));
-    endian_32lo16 (Register_ProgramCounter, Cycle_EffectiveAddress);
+    endian_32hi8 (Register_ProgramCounter, env->envReadMemDataByte (0xFFFF));
 }
 
 
@@ -554,7 +542,7 @@ void MOS6510::FetchOpcode (void)
     const uint_least8_t instrOpcode   = env->envReadMemByte (instrStartPC);
     instrCurrent  = instrTable[instrOpcode];
 
-    irqFlag = irqs != 0;
+    irqFlag = irqAsserted;
     irqClk = -1;
     nmiClk = -1;
 
@@ -2457,15 +2445,14 @@ void MOS6510::Initialise (void)
     Register_ProgramCounter = 0;
 
     // IRQs pending check
-    irqs       = 0;
+    irqAsserted = false;
     irqFlag    = false;
-    nmis       = 0;
     nmiFlag    = false;
     nmiClk     = -1;
     irqClk     = -1;
 
     // Signals
-    aec = true;
+    rdy = true;
 
     eventContext.schedule (m_nosteal, 0, EVENT_CLOCK_PHI2);
 }
@@ -2488,11 +2475,10 @@ void MOS6510::reset (void)
 // Module Credits                                                          //
 void MOS6510::credits (char *sbuffer)
 {   // Copy credits to buffer
-    strcat (sbuffer, "Module     : MOS6510 Cycle Exact Emulation\n");
-    strcat (sbuffer, "Written By : " MOS6510_AUTHOR "\n");
-    strcat (sbuffer, "Version    : " MOS6510_VERSION "\n");
-    strcat (sbuffer, "Released   : " MOS6510_DATE "\n");
-    strcat (sbuffer, "Email      : " MOS6510_EMAIL "\n");
+    strcat (sbuffer, "MOS6510 Cycle Exact Emulation\n");
+    strcat (sbuffer, "\t(C) 2000 Simon A. White\n");
+    strcat (sbuffer, "\t(C) 2008-2010 Antti S. Lankila\n");
+    strcat (sbuffer, "\t(C) 2011-2012 Leandro Nini\n");
 }
 
 void MOS6510::debug (const bool enable, FILE *out)

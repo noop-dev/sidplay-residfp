@@ -115,7 +115,14 @@
 #include "sidplayfp/sidendian.h"
 
 /** @internal
-* MOS6510
+/**
+* Cycle-exact 6502/6510 emulation core.
+*
+* Code is based on work by Simon A. White <sidplay2@yahoo.com>.
+* Original Java port by Ken Händel. Later on, it has been hacked to
+* improve compatibility with Lorenz suite on VICE's test suite.
+*
+* @author alankila
 */
 class MOS6510
 {
@@ -162,17 +169,14 @@ protected:
 
     /* Interrupts */
 
-    /** How many chips are asserting IRQ line */
-    int  irqs;
-
     /** IRQ requested */
     bool irqFlag;
 
+    /** IRQ asserted on CPU */
+     bool irqAsserted;
+
      /** When IRQ can trigger earliest */
     event_clock_t  irqClk;
-
-    /** Number of sources pulling NMI line. */
-    int nmis;
 
     /** NMI positive edge sent by CIA2? */
     bool           nmiFlag;
@@ -181,7 +185,7 @@ protected:
     event_clock_t  nmiClk;
 
     /** Address Controller, blocks reads */
-    bool aec;
+    bool rdy;
 
     struct ProcessorCycle       fetchCycle;
 
@@ -345,7 +349,7 @@ public:
     virtual void credits   (char *str);
     virtual void DumpState (void);
     void         debug     (const bool enable, FILE *out);
-    void         aecSignal (const bool state);
+    void         setRDY    (const bool state);
     void         setEnvironment(C64Environment *env) { this->env = env; }
 
     // Non-standard functions
