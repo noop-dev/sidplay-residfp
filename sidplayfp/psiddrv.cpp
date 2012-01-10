@@ -319,8 +319,9 @@ int Player::psidDrvReloc (SidTuneInfo &tuneInfo, sid2_info_t &info)
         if (tuneInfo.compatibility >= SIDTUNE_COMPATIBILITY_R64)
             *addr++ = 0;
         else
-            *addr++ = 1 << SR_INTERRUPT;
+            *addr++ = 1 << MOS6510::SR_INTERRUPT;
     }
+
     return 0;
 }
 

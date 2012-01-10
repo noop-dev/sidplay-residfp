@@ -1243,6 +1243,7 @@ void MOS6510::branch_instr (const bool condition)
     }
     else
     {
+        /* branch not taken: skip the following spurious read insn and go to FetchNextInstr immediately. */
         interruptsAndNextOpcode ();
     }
 }
@@ -1690,18 +1691,6 @@ void MOS6510::rra_instr (void)
     Perform_ADC ();
 }
 
-// Undocumented - This opcode ANDs the contents of the A and X registers (without changing
-// the contents of either register) and transfers the result to the stack
-// pointer.  It then ANDs that result with the contents of the high byte of
-// the target address of the operand +1 and stores that final result in
-// memory.
-void MOS6510::tas_instr (void)
-{
-    endian_16lo8  (Register_StackPointer, Register_Accumulator & Register_X);
-    uint_least16_t tmp = Register_StackPointer & (Cycle_EffectiveAddress + 1);
-    Cycle_Data         = (signed) endian_16lo8 (tmp);
-}
-
 //-------------------------------------------------------------------------//
 
 /**
@@ -1785,6 +1774,7 @@ MOS6510::MOS6510 (EventContext *context)
             access = READ;
         case STAzx: case STYzx:
             instrCurrent[cycleCount++].func = &MOS6510::FetchLowAddrX;
+            // operates on 0 page in read mode. Truly side-effect free.
             instrCurrent[cycleCount++].func = &MOS6510::WasteCycle;
         break;
 
@@ -1793,6 +1783,7 @@ MOS6510::MOS6510 (EventContext *context)
             access = READ;
         case STXzy: case SAXzy:
             instrCurrent[cycleCount++].func = &MOS6510::FetchLowAddrY;
+            // operates on 0 page in read mode. Truly side-effect free.
             instrCurrent[cycleCount++].func = &MOS6510::WasteCycle;
         break;
 
@@ -2217,6 +2208,8 @@ MOS6510::MOS6510 (EventContext *context)
         break;
 
         case RTIn:
+            // should read the value at current stack register.
+            // Truly side-effect free.
             instrCurrent[cycleCount++].func = &MOS6510::WasteCycle;
             instrCurrent[cycleCount++].func = &MOS6510::PopSR;
             instrCurrent[cycleCount++].func = &MOS6510::PopLowPC;
@@ -2225,6 +2218,8 @@ MOS6510::MOS6510 (EventContext *context)
         break;
 
         case RTSn:
+            // should read the value at current stack register.
+            // Truly side-effect free.
             instrCurrent[cycleCount++].func = &MOS6510::WasteCycle;
             instrCurrent[cycleCount++].func = &MOS6510::PopLowPC;
             instrCurrent[cycleCount++].func = &MOS6510::PopHighPC;
@@ -2347,7 +2342,6 @@ MOS6510::MOS6510 (EventContext *context)
         }
 
         /* check for IRQ triggers or fetch next opcode... */
-        //instrCurrent[cycleCount].nosteal = false;
         instrCurrent[cycleCount].func = &MOS6510::interruptsAndNextOpcode;
 
 #if MOS6510_DEBUG > 1
@@ -2423,7 +2417,6 @@ MOS6510::MOS6510 (EventContext *context)
 
     dodump = false;
     Initialise ();
-return;
 }
 
 //-------------------------------------------------------------------------//
