@@ -481,12 +481,12 @@ void MOS6510::RSTLoRequest (void)
     /* reset the values in MMU */
     env->envWriteMemByte(0, 0x2f);
     env->envWriteMemByte(1, 0x37);
-    Register_ProgramCounter = env->envReadMemDataByte(0xFFFC);
+    endian_32lo8 (Register_ProgramCounter, env->envReadMemDataByte (0xFFFC));
 }
 
 void MOS6510::RSTHiRequest (void)
 {
-    Register_ProgramCounter = env->envReadMemDataByte(0xFFFD);
+    endian_32hi8 (Register_ProgramCounter, env->envReadMemDataByte (0xFFFD));
 }
 
 void MOS6510::NMILoRequest (void)
@@ -641,7 +641,7 @@ void MOS6510::FetchHighAddr (void)
     endian_16hi8 (Cycle_EffectiveAddress, env->envReadMemByte (endian_32lo16 (Register_ProgramCounter)));
     Register_ProgramCounter++;
 
-    // Nextline used for Debug
+    // Next line used for Debug
     endian_16hi8 (Instr_Operand, endian_16hi8 (Cycle_EffectiveAddress));
 }
 
@@ -709,7 +709,7 @@ void MOS6510::FetchLowPointer (void)
     Cycle_Pointer = env->envReadMemByte (endian_32lo16 (Register_ProgramCounter));
     Register_ProgramCounter++;
 
-    // Nextline used for Debug
+    // Next line used for Debug
     Instr_Operand = Cycle_Pointer;
 }
 
@@ -723,7 +723,7 @@ void MOS6510::FetchLowPointer (void)
 */
 void MOS6510::FetchLowPointerX (void)
 {
-    Cycle_Pointer = (Cycle_Pointer + Register_X) & 0xFF;
+    endian_16lo8 (Cycle_Pointer, (Cycle_Pointer + Register_X) & 0xFF);
 }
 
 /**
@@ -739,7 +739,7 @@ void MOS6510::FetchHighPointer (void)
     endian_16hi8 (Cycle_Pointer, env->envReadMemByte (endian_32lo16 (Register_ProgramCounter)));
     Register_ProgramCounter++;
 
-    // Nextline used for Debug
+    // Next line used for Debug
     endian_16hi8 (Instr_Operand, endian_16hi8 (Cycle_Pointer));
 }
 
@@ -1222,7 +1222,8 @@ void MOS6510::branch_instr (const bool condition)
     if (condition)
     {
         /* issue the spurious read for next insn here. */
-        env->envReadMemByte(Register_ProgramCounter);
+        env->envReadMemByte(endian_32lo16 (Register_ProgramCounter));
+
         Cycle_HighByteWrongEffectiveAddress = Register_ProgramCounter & 0xff00 | Register_ProgramCounter + (int8_t) Cycle_Data & 0xff;
         Cycle_EffectiveAddress = Register_ProgramCounter + (int8_t) Cycle_Data;
 
@@ -1422,7 +1423,7 @@ void MOS6510::rol_instr (void)
 {
     const uint8_t tmp = Cycle_Data & 0x80;
     PutEffAddrDataByte ();
-    Cycle_Data   <<= 1;
+    Cycle_Data <<= 1;
     if (flagC)
         Cycle_Data |= 0x01;
     setFlagsNZ (Cycle_Data);
@@ -1431,34 +1432,34 @@ void MOS6510::rol_instr (void)
 
 void MOS6510::rola_instr (void)
 {
-    const uint8_t tmp = Register_Accumulator & 0x80;
+    const uint8_t newC = Register_Accumulator & 0x80;
     Register_Accumulator <<= 1;
     if (flagC)
         Register_Accumulator |= 0x01;
     setFlagsNZ (Register_Accumulator);
-    flagC = tmp;
+    flagC = newC;
     interruptsAndNextOpcode ();
 }
 
 void MOS6510::ror_instr (void)
 {
-    const uint8_t tmp  = Cycle_Data & 0x01;
+    const uint8_t newC = Cycle_Data & 0x01;
     PutEffAddrDataByte ();
     Cycle_Data >>= 1;
     if (flagC)
         Cycle_Data |= 0x80;
     setFlagsNZ (Cycle_Data);
-    flagC = tmp;
+    flagC = newC;
 }
 
 void MOS6510::rora_instr (void)
 {
-    const uint8_t tmp = Register_Accumulator & 0x01;
+    const uint8_t newC = Register_Accumulator & 0x01;
     Register_Accumulator >>= 1;
     if (flagC)
         Register_Accumulator |= 0x80;
     setFlagsNZ (Register_Accumulator);
-    flagC = tmp;
+    flagC = newC;
     interruptsAndNextOpcode ();
 }
 
@@ -1557,7 +1558,7 @@ void MOS6510::alr_instr (void)
 void MOS6510::anc_instr (void)
 {
     setFlagsNZ (Register_Accumulator &= Cycle_Data);
-    flagC   = flagN;
+    flagC = flagN;
     interruptsAndNextOpcode ();
 }
 
@@ -1664,11 +1665,11 @@ void MOS6510::oal_instr (void)
 // the accumulator.
 void MOS6510::rla_instr (void)
 {
-    const uint8_t tmp = Cycle_Data & 0x80;
+    const uint8_t newC = Cycle_Data & 0x80;
     PutEffAddrDataByte ();
-    Cycle_Data  = Cycle_Data << 1;
+    Cycle_Data = Cycle_Data << 1;
     if (flagC) Cycle_Data |= 0x01;
-    flagC = tmp;
+    flagC = newC;
     setFlagsNZ (Register_Accumulator &= Cycle_Data);
 }
 
@@ -1676,11 +1677,11 @@ void MOS6510::rla_instr (void)
 // the accumulator.
 void MOS6510::rra_instr (void)
 {
-    const uint8_t tmp  = Cycle_Data & 0x01;
+    const uint8_t newC = Cycle_Data & 0x01;
     PutEffAddrDataByte ();
     Cycle_Data >>= 1;
     if (flagC) Cycle_Data |= 0x80;
-    flagC = tmp;
+    flagC = newC;
     Perform_ADC ();
 }
 
