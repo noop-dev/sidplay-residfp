@@ -34,35 +34,108 @@ class MOS656X: public component, private Event
 private:
     static const char *credit;
 
+private:
+    /** raster IRQ flag */
+    static const int IRQ_RASTER = 1 << 0;
+
+    /** Light-Pen IRQ flag */
+    static const int IRQ_LIGHTPEN = 1 << 3;
+
+protected:
+    /** First line when we check for bad lines */
+    static const int FIRST_DMA_LINE = 0x30;
+
+    /** Last line when we check for bad lines */
+    static const int LAST_DMA_LINE = 0xf7;
+
 protected:
     event_clock_t m_rasterClk;
+
+    /** CPU's event context. */
     EventContext &event_context;
 
-    uint_least16_t yrasters, xrasters, raster_irq;
-    uint_least16_t raster_x, raster_y;
-    uint_least16_t first_dma_line, last_dma_line, y_scroll;
-    bool           bad_lines_enabled, bad_line;
-    bool           vblanking;
-    bool           lp_triggered;
-    uint8_t        icr, idr, ctrl1;
-    uint8_t        lpx, lpy;
-    uint8_t       &sprite_enable, &sprite_y_expansion;
-    uint8_t        sprite_dma, sprite_expand_y;
-    uint8_t        sprite_mc_base[8];
+    /** Number of cycles per line. */
+    uint_least16_t cyclesPerLine;
 
-    uint8_t        regs[0x40];
+    uint_least16_t maxRasters;
+
+    uint_least16_t raster_irq;
+
+    /** Current visible line */
+    uint_least16_t lineCycle;
+
+    /** current raster line */
+    uint_least16_t rasterY;
+
+    /** vertical scrolling value */
+    uint_least16_t yscroll;
+
+    /** are bad lines enabled for this frame? */
+    bool areBadLinesEnabled;
+
+    /** is the current line a bad line */
+    bool isBadLine;
+
+    bool vblanking;
+
+    /** Has light pen IRQ been triggered in this frame already? */
+    bool lp_triggered;
+
+    /** internal IRQ flags */
+    uint8_t irqFlags;
+
+    /** masks for the IRQ flags */
+    uint8_t irqMask;
+
+    /** Light pen coordinates */
+    uint8_t lpx, lpy;
+
+    /** the 8 sprites data*/
+    uint8_t &sprite_enable, &sprite_y_expansion;
+    uint8_t sprite_dma, sprite_expand_y;
+    uint8_t sprite_mc_base[8];
+
+    /** memory for chip registers */
+    uint8_t regs[0x40];
 
 private:
     event_clock_t  clock   (void);
 
+    /** Signal CPU interrupt if requested by VIC. */
+    void handleIrqState();
+
 protected:
     MOS656X (EventContext *context);
     void    event       (void);
-    void    trigger     (int irq);
 
     EventCallback<MOS656X> badLineStateChangeEvent;
 
     void badLineStateChange() { addrctrl(false); }
+
+    /**
+    * Set an IRQ flag and trigger an IRQ if the corresponding IRQ mask is set.
+    * The IRQ only gets activated, i.e. flag 0x80 gets set, if it was not active before.
+    */
+    void activateIRQFlag(const int flag)
+    {
+        irqFlags |= flag;
+        handleIrqState();
+    }
+
+    /**
+    * Read the DEN flag which tells whether the display is enabled
+    *
+    * @return true if DEN is set, otherwise false
+    */
+    bool readDEN() const { return (regs[0x11] & 0x10) != 0; }
+
+    bool evaluateIsBadLine() const
+    {
+        return areBadLinesEnabled
+            && rasterY >= FIRST_DMA_LINE
+            && rasterY <= LAST_DMA_LINE
+            && (rasterY & 7) == yscroll;
+    }
 
     // Environment Interface
     virtual void interrupt (bool state) = 0;
