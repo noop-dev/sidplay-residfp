@@ -532,7 +532,7 @@ void MOS6510::FetchOpcode (void)
 #endif
 
     // Next line used for Debug
-    instrStartPC  = endian_32lo16 (Register_ProgramCounter++);
+    instrStartPC  = Register_ProgramCounter++;
 
     const uint_least8_t instrOpcode   = env->envReadMemByte (instrStartPC);
     instrCurrent  = instrTable[instrOpcode];
