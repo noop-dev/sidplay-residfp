@@ -960,6 +960,7 @@ void MOS6510::rti_instr (void)
 
 void MOS6510::rts_instr (void)
 {
+    env->envReadMemDataByte (Cycle_EffectiveAddress);
     endian_32lo16 (Register_ProgramCounter, Cycle_EffectiveAddress);
     Register_ProgramCounter++;
 }
