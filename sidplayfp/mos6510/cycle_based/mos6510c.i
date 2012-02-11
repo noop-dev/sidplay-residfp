@@ -239,6 +239,7 @@ void MOS6510::eventWithSteals  (void)
         * modified by CLI and SEI, and are specially handled below. */
         if (nmiClk == cycleCount) {
             nmiClk --;
+
         }
         if (cycleCount == 0) {
             /* If stalled on first cycle of CLIn, consume IRQ delay
@@ -318,12 +319,12 @@ void MOS6510::setStatusRegister(const uint8_t sr)
 *
 * @param rdy new state for RDY signal
 */
-void MOS6510::setRDY (const bool newAec)
+void MOS6510::setRDY (const bool newRDY)
 {
-    if (rdy == newAec)
+    if (rdy == newRDY)
         return;
 
-    rdy = newAec;
+    rdy = newRDY;
     if (rdy) {
         eventContext.cancel(m_steal);
         eventContext.schedule(m_nosteal, 0, EVENT_CLOCK_PHI2);
@@ -413,11 +414,11 @@ void MOS6510::triggerNMI (void)
 void MOS6510::triggerIRQ (void)
 {
     /* mark interrupt arrival time */
-    if (irqAsserted)
+    if (irqAssertedOnPin)
         return;
 
     irqFlag = true;
-    irqAsserted = true;
+    irqAssertedOnPin = true;
     irqClk = cycleCount;
     /* maybe process 1 clock of interrupt delay. */
     if (! rdy) {
@@ -432,7 +433,7 @@ void MOS6510::triggerIRQ (void)
 */
 void MOS6510::clearIRQ (void)
 {
-    irqAsserted = false;
+    irqAssertedOnPin = false;
 }
 
 void MOS6510::interruptsAndNextOpcode (void)
@@ -536,7 +537,7 @@ void MOS6510::FetchOpcode (void)
     const uint_least8_t instrOpcode   = env->envReadMemByte (instrStartPC);
     instrCurrent  = instrTable[instrOpcode];
 
-    irqFlag = irqAsserted;
+    irqFlag = irqAssertedOnPin;
     irqClk = -1;
     nmiClk = -1;
 
@@ -2428,7 +2429,7 @@ void MOS6510::Initialise (void)
     Register_ProgramCounter = 0;
 
     // IRQs pending check
-    irqAsserted = false;
+    irqAssertedOnPin = false;
     irqFlag    = false;
     nmiFlag    = false;
     nmiClk     = -1;
