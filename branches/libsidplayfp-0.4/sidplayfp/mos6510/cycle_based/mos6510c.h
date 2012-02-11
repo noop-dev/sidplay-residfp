@@ -157,7 +157,7 @@ protected:
     int cycleCount;
 
     /** IRQ asserted on CPU */
-    bool irqAsserted;
+    bool irqAssertedOnPin;
 
     /** IRQ requested */
     bool irqFlag;
@@ -360,7 +360,7 @@ public:
     virtual void credits   (char *str);
     virtual void DumpState (void);
     void         debug     (const bool enable, FILE *out);
-    void         setRDY    (const bool state);
+    void         setRDY    (const bool newRDY);
     void         setEnvironment(C64Environment *env) { this->env = env; }
 
     // Non-standard functions
