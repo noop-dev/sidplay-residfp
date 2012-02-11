@@ -150,11 +150,11 @@ protected:
     /** Our event context copy. */
     EventContext &eventContext;
 
+    /** Current instruction */
     struct ProcessorCycle *instrCurrent;
 
+    /** Subcycle within current instruction */
     int cycleCount;
-
-    /* Interrupts */
 
     /** IRQ asserted on CPU */
     bool irqAsserted;
@@ -199,7 +199,7 @@ protected:
 
     /** Debug info */
     uint_least16_t instrStartPC;
-    uint_least16_t Instr_Operand;
+    uint_least16_t instrOperand;
 
     FILE *m_fdbg;
 
@@ -350,8 +350,8 @@ protected:
     void        illegal_instr (void);
 
     // Declare Arithmatic Operations
-    inline void Perform_ADC   (void);
-    inline void Perform_SBC   (void);
+    inline void doADC   (void);
+    inline void doSBC   (void);
 
 public:
     MOS6510 (EventContext *context);
