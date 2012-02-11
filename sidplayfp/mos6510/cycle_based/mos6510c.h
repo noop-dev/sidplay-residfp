@@ -183,7 +183,7 @@ protected:
     bool           flagB;
 
     /** Pointers to the current instruction cycle */
-    uint_least32_t Register_ProgramCounter;
+    uint_least16_t Register_ProgramCounter;
 
     uint_least16_t Cycle_EffectiveAddress;
     uint_least16_t Cycle_HighByteWrongEffectiveAddress;
