@@ -262,8 +262,11 @@ void MOS6510::eventWithSteals  (void)
     }
 }
 
-//-------------------------------------------------------------------------//
-
+/**
+* Set N and Z flag values.
+*
+* @param value to set flags from
+*/
 void MOS6510::setFlagsNZ(const uint8_t value)
 {
     flagZ = value == 0;
@@ -516,14 +519,6 @@ void MOS6510::IRQHiRequest (void)
 }
 
 
-//-------------------------------------------------------------------------//
-//-------------------------------------------------------------------------//
-// Common Instruction Addressing Routines                                  //
-// Addressing operations as described in 64doc by John West and            //
-// Marko Makela                                                            //
-//-------------------------------------------------------------------------//
-//-------------------------------------------------------------------------//
-
 /**
 * Fetch opcode, increment PC<BR>
 *
@@ -642,7 +637,7 @@ void MOS6510::FetchHighAddr (void)
     Register_ProgramCounter++;
 
     // Next line used for Debug
-    endian_16hi8 (Instr_Operand, endian_16hi8 (Cycle_EffectiveAddress));
+    endian_16hi8 (instrOperand, endian_16hi8 (Cycle_EffectiveAddress));
 }
 
 /**
@@ -710,7 +705,7 @@ void MOS6510::FetchLowPointer (void)
     Register_ProgramCounter++;
 
     // Next line used for Debug
-    Instr_Operand = Cycle_Pointer;
+    instrOperand = Cycle_Pointer;
 }
 
 /**
@@ -740,7 +735,7 @@ void MOS6510::FetchHighPointer (void)
     Register_ProgramCounter++;
 
     // Next line used for Debug
-    endian_16hi8 (Instr_Operand, endian_16hi8 (Cycle_Pointer));
+    endian_16hi8 (instrOperand, endian_16hi8 (Cycle_Pointer));
 }
 
 /**
@@ -809,6 +804,9 @@ void MOS6510::FetchEffAddrDataByte (void)
     Cycle_Data = env->envReadMemDataByte (Cycle_EffectiveAddress);
 }
 
+/**
+* Write Cycle_Data to effective address.
+*/
 void MOS6510::PutEffAddrDataByte (void)
 {
     env->envWriteMemByte (Cycle_EffectiveAddress, Cycle_Data);
@@ -1085,13 +1083,8 @@ void MOS6510::xas_instr (void)
 }
 
 
-//-------------------------------------------------------------------------//
-//-------------------------------------------------------------------------//
-// Generic Binary Coded Decimal Correction                                 //
-//-------------------------------------------------------------------------//
-//-------------------------------------------------------------------------//
-
-void MOS6510::Perform_ADC (void)
+/** BCD adding */
+void MOS6510::doADC (void)
 {
     const uint C      = flagC ? 1 : 0;
     const uint A      = Register_Accumulator;
@@ -1124,7 +1117,8 @@ void MOS6510::Perform_ADC (void)
     }
 }
 
-void MOS6510::Perform_SBC (void)
+/** BCD subtracting */
+void MOS6510::doSBC (void)
 {
     const uint C      = flagC? 0 : 1;
     const uint A      = Register_Accumulator;
@@ -1171,7 +1165,7 @@ void MOS6510::Perform_SBC (void)
 
 void MOS6510::adc_instr (void)
 {
-    Perform_ADC ();
+    doADC ();
     interruptsAndNextOpcode ();
 }
 
@@ -1473,7 +1467,7 @@ void MOS6510::sbx_instr (void)
 
 void MOS6510::sbc_instr (void)
 {
-    Perform_SBC ();
+    doSBC ();
     interruptsAndNextOpcode ();
 }
 
@@ -1619,7 +1613,7 @@ void MOS6510::ins_instr (void)
 {
     PutEffAddrDataByte ();
     Cycle_Data++;
-    Perform_SBC ();
+    doSBC ();
 }
 
 // Undocumented - This opcode ANDs the contents of a memory location with the contents of the
@@ -1682,7 +1676,7 @@ void MOS6510::rra_instr (void)
     Cycle_Data >>= 1;
     if (flagC) Cycle_Data |= 0x80;
     flagC = newC;
-    Perform_ADC ();
+    doADC ();
 }
 
 //-------------------------------------------------------------------------//
@@ -2413,8 +2407,9 @@ MOS6510::MOS6510 (EventContext *context)
     Initialise ();
 }
 
-//-------------------------------------------------------------------------//
-// Initialise CPU Emulation (Registers)                                    //
+/**
+* Initialise CPU Emulation (Registers)
+*/
 void MOS6510::Initialise (void)
 {
     // Reset stack
@@ -2444,8 +2439,9 @@ void MOS6510::Initialise (void)
     eventContext.schedule (m_nosteal, 0, EVENT_CLOCK_PHI2);
 }
 
-//-------------------------------------------------------------------------//
-// Reset CPU Emulation                                                     //
+/**
+* Reset CPU Emulation
+*/
 void MOS6510::reset (void)
 {   // Internal Stuff
     Initialise ();
