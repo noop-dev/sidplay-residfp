@@ -165,6 +165,7 @@ void MOS656X::write (uint_least8_t addr, uint8_t data)
         // Start bad dma line now
         if (isBadLine && (lineCycle < 53))
             event_context.schedule(badLineStateChangeEvent, 0, EVENT_CLOCK_PHI1);
+
         break;
     }
 
@@ -230,12 +231,14 @@ event_clock_t MOS656X::clock (void)
     const uint_least16_t cycle = (lineCycle + 9) % cyclesPerLine;
     lineCycle    %= cyclesPerLine;
 
+
     switch (cycle)
     {
     case 0:
     {   // Calculate sprite DMA
         const uint8_t y = rasterY & 0xff;
         sprite_expand_y ^= sprite_y_expansion; // 3.8.1-2
+
         uint8_t mask = 1;
         for (unsigned int i=1; i<0x10; i+=2, mask<<=1)
         {   // 3.8.1-3
